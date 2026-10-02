@@ -75,9 +75,7 @@ namespace firewatch
         if (m_battery.GetCharge() < Battery::CRITICAL_CHARGE)
         {
             m_state = State::eReturning;
-            std::cout << "[Quadcopter] " << m_number
-                << " возвращается на базу: заряд ниже критического ("
-                << Battery::CRITICAL_CHARGE << "%)\n";
+            std::cout << "[Quadcopter] " << m_number << " возвращается на базу: заряд ниже критического" << Battery::CRITICAL_CHARGE << "%)\n";
             return;
         }
         m_state = State::eFlying;
