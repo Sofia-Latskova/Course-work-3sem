@@ -5,27 +5,29 @@
 namespace firewatch
 {
 
-    flightask::flightask(std::string_view zoneName, quadcopter* drone): m_zoneName{ zoneName }, m_drone{ drone }
+    FlightTask::FlightTask(std::string_view zoneName, Quadcopter* drone)
+        : m_zoneName{ zoneName },
+        m_drone{ drone }
     {
         std::cout << "[FlightTask] Создано задание для зоны " << m_zoneName << "\n";
     }
 
-    flightask::~flightask()
+    FlightTask::~FlightTask()
     {
         std::cout << "[FlightTask] Уничтожено задание для зоны " << m_zoneName << "\n";
     }
 
-    std::string flightask::GetZoneName() const
+    std::string FlightTask::GetZoneName() const
     {
         return m_zoneName;
     }
 
-    flightask::Status flightask::GetStatus() const
+    FlightTask::Status FlightTask::GetStatus() const
     {
         return m_status;
     }
 
-    std::string flightask::GetStatusStr() const
+    std::string FlightTask::GetStatusStr() const
     {
         switch (m_status)
         {
@@ -37,20 +39,20 @@ namespace firewatch
         return "неизвестно";
     }
 
-    bool flightask::CanStart() const
+    bool FlightTask::CanStart() const
     {
         if (m_drone == nullptr)
         {
             return false;
         }
-        if (m_drone->GetState() != quadcopter::State::eOnBase)
+        if (m_drone->GetState() != Quadcopter::State::eOnBase)
         {
             return false;
         }
         return m_status == Status::eCreated;
     }
 
-    bool flightask::Start()
+    bool FlightTask::Start()
     {
         if (!CanStart())
         {
@@ -67,7 +69,7 @@ namespace firewatch
         return true;
     }
 
-    void flightask::Abort(std::string_view reason)
+    void FlightTask::Abort(std::string_view reason)
     {
         if (m_status != Status::eInProgress)
         {
@@ -79,7 +81,7 @@ namespace firewatch
         std::cout << "[FlightTask] Задание прервано. Причина: " << reason << "\n";
     }
 
-    void flightask::Complete()
+    void FlightTask::Complete()
     {
         if (m_status != Status::eInProgress)
         {

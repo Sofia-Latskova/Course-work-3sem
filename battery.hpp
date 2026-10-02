@@ -4,20 +4,20 @@
 
 namespace firewatch
 {
-	class battery
+	class Battery
 	{
 	public:
-		static constexpr int min_charge = 20;
-		static constexpr int critical_charge = 10;
-		static constexpr int max_charge = 100;
+		static constexpr int MIN_CHARGE = 20;
+		static constexpr int CRITICAL_CHARGE = 10;
+		static constexpr int MAX_PERCENT = 100;
 	private:
-		int m_charge_percent{ max_charge };
-		int m_capacity_percent{ max_charge };
+		int m_chargePercent{ MAX_PERCENT };
+		int m_capacityPercent{ MAX_PERCENT };
 		std::string m_serial{ "BAT-000" };
 	public:
-		battery() = default;
-		battery(int chargePercent, int capacityPercent, std::string_view serial);
-		~battery();
+		Battery() = default;
+		Battery(int chargePercent, int capacityPercent, std::string_view serial);
+		~Battery();
 
 		[[nodiscard]] int GetCharge() const;
 		[[nodiscard]] int GetCapacity() const;
@@ -30,7 +30,7 @@ namespace firewatch
 		void Charge(int percent);
 
 		//проверка заряд в диапазоне
-		[[nodiscard]] bool Isvalid() const;
+		[[nodiscard]] bool IsValid() const;
 	};
 }
 

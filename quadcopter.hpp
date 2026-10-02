@@ -5,8 +5,10 @@
 #include <string>
 #include <string_view>
 
-namespace firewatch {
-	class quadcopter {
+namespace firewatch 
+{
+	class Quadcopter 
+    {
 	public:
         enum class State
         {
@@ -18,11 +20,11 @@ namespace firewatch {
     private:
         std::string m_number{ "DRN-000" };
         State m_state{ State::eOnBase };
-        battery m_battery;
+        Battery m_battery;
     public:
-        quadcopter() = default;
-        quadcopter(std::string_view number, battery Battery);
-        ~quadcopter();
+        Quadcopter() = default;
+        Quadcopter(std::string_view number, Battery battery);
+        ~Quadcopter();
 
         [[nodiscard]] std::string GetNumber() const;
         [[nodiscard]] State GetState() const;
@@ -39,7 +41,7 @@ namespace firewatch {
         void Scan();
 
         //Заряд ниже мин
-        bool CanTakeOff() const;
+        [[nodiscard]] bool CanTakeOff() const;
 
 
 	};

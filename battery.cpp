@@ -3,70 +3,71 @@
 #include <iostream>
 
 
-namespace firewatch {
+namespace firewatch 
+{
 
-	battery::battery(int chargePercent, int capacityPercent, std::string_view serial)
-		:m_charge_percent{ chargePercent },
-		m_capacity_percent{ capacityPercent },
+	Battery::Battery(int chargePercent, int capacityPercent, std::string_view serial)
+		:m_chargePercent{ chargePercent },
+		m_capacityPercent{ capacityPercent },
 		m_serial{ serial } 
 	{
-		if (!Isvalid()) {
+		if (!IsValid()) {
 			std::cout << "[Battery] Некорректный заряд, сброшен в 0\n";
-			m_charge_percent = 0;
+			m_chargePercent = 0;
 		}
-		std::cout << "[Battery] Создан " << m_serial << " заряд=" << m_charge_percent << "%\n";
+		std::cout << "[Battery] Создан " << m_serial << " заряд=" << m_chargePercent << "%\n";
 	}
 
-	battery::~battery() 
+	Battery::~Battery() 
 	{
 		std::cout << "[Battery] Уничтожен " << m_serial << "\n";
 	}
 
-	int battery::GetCharge() const
+	int Battery::GetCharge() const
 	{
-		return m_charge_percent;
+		return m_chargePercent;
 	}
 
-	int battery::GetCapacity() const
+	int Battery::GetCapacity() const
 	{
-		return m_capacity_percent;
+		return m_capacityPercent;
 	}
 
-	std::string battery::GetSerial() const
+	std::string Battery::GetSerial() const
 	{
 		return m_serial;
 	}
 
-	void battery::Consume(int percent)
+	void Battery::Consume(int percent)
 	{
 		if (percent <= 0)
 		{
 			return;
 		}
-		m_charge_percent -= percent;
-		if (m_charge_percent < 0)
+		m_chargePercent -= percent;
+		if (m_chargePercent < 0)
 		{
-			m_charge_percent = 0;
+			m_chargePercent = 0;
 		}
-		std::cout << "[Battery] " << m_serial << " разряжен до " << m_charge_percent << "%\n";
+		std::cout << "[Battery] " << m_serial << " разряжен до " << m_chargePercent << "%\n";
 	}
 
-	void battery::Charge(int percent)
+	void Battery::Charge(int percent)
 	{
 		if (percent <= 0)
 		{
 			return;
 		}
-		m_charge_percent += percent;
-		if (m_charge_percent > m_capacity_percent)
+		m_chargePercent += percent;
+		if (m_chargePercent > m_capacityPercent)
 		{
-			m_charge_percent = m_capacity_percent;
+			m_chargePercent = m_capacityPercent;
 		}
-		std::cout << "[Battery] " << m_serial<< " заряжен до " << m_charge_percent << "%\n";
+		std::cout << "[Battery] " << m_serial<< " заряжен до " << m_chargePercent << "%\n";
 	}
 
-	bool battery::IsValid() const
+	bool Battery::IsValid() const
 	{
-		return m_charge_percent >= 0 && m_charge_percent <= m_capacity_percent;
+		return m_chargePercent >= 0 && m_chargePercent <= m_capacityPercent;
 	}
 }

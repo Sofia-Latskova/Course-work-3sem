@@ -5,8 +5,10 @@
 #include <string>
 #include <string_view>
 
-namespace firewatch {
-	class flightask {
+namespace firewatch 
+{
+	class FlightTask 
+	{
 	public:
 		enum class Status
 		{
@@ -18,11 +20,11 @@ namespace firewatch {
 	private:
 		std::string m_zoneName{ "ZONE-0" };
 		Status      m_status{ Status::eCreated };
-		quadcopter* m_drone{ nullptr };
+		Quadcopter* m_drone{ nullptr };
 	public:
-		flightask() = default;
-		flightask(std::string_view zoneName, quadcopter* drone);
-		~flightask();
+		FlightTask() = default;
+		FlightTask(std::string_view zoneName, Quadcopter* drone);
+		~FlightTask();
 		[[nodiscard]] std::string GetZoneName() const;
 		[[nodiscard]] Status      GetStatus() const;
 		[[nodiscard]] std::string GetStatusStr() const;
@@ -31,13 +33,13 @@ namespace firewatch {
 		bool Start();
 
 		//прервать
-		void Abort();
+		void Abort(std::string_view reason);
 
 		//завершить
 		void Complete();
 
 		//нельзя начать если дрон занят
-		bool CanStart() const;
+		[[nodiscard]] bool CanStart() const;
 
 	};
 }

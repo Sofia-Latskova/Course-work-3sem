@@ -1,3 +1,37 @@
-﻿//Курсовая работа "проектирование системы управления квадрокоптером,осуществляющим мониторинг лесных пожаров"
-//Часть проекта на С++
-//ggttggbbh
+﻿#include "battery.hpp"
+#include "flight_task.hpp"
+#include "quadcopter.hpp"
+
+#include <iostream>
+#include <string>
+
+using namespace firewatch;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
