@@ -92,5 +92,4 @@ namespace firewatch
         m_status = Status::eCompleted;
         std::cout << "[FlightTask] Задание в зоне " << m_zoneName << " завершено\n";
     }
-
 }

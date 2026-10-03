@@ -42,9 +42,5 @@ namespace firewatch
 
         //Заряд ниже мин
         [[nodiscard]] bool CanTakeOff() const;
-
-
 	};
-
-
 }

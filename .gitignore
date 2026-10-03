@@ -1,0 +1,55 @@
+
+```gitignore
+# --- C/C++ ---
+*.o
+*.obj
+*.exe
+*.out
+*.app
+*.a
+*.lib
+*.so
+*.so.*
+*.dll
+*.dylib
+*.pdb
+*.idb
+*.ilk
+
+# --- CMake ---
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+.cache/
+
+# --- C# / .NET ---
+**/bin/
+**/obj/
+*.suo
+*.user
+*.userprefs
+*.nupkg
+project.lock.json
+TestResults/
+
+# --- Папки сборки ---
+**/build/
+**/out/
+**/Debug/
+**/Release/
+**/x64/
+
+# --- IDE / OS ---
+.vs/
+.vscode/
+.idea/
+*.user
+.DS_Store
+Thumbs.db
+
+# --- Временные файлы ---
+*~
+*.swp
+*.tmp
+*.bak
