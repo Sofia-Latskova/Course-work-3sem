@@ -20,10 +20,10 @@ namespace firewatch
     private:
         std::string m_number{ "DRN-000" };
         State m_state{ State::eOnBase };
-        Battery m_battery;
+        Battery* m_battery;
     public:
         Quadcopter() = default;
-        Quadcopter(std::string_view number, Battery battery);
+        Quadcopter(std::string_view number, Battery* battery);
         ~Quadcopter();
 
         [[nodiscard]] std::string GetNumber() const;

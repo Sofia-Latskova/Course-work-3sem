@@ -15,8 +15,9 @@ namespace firewatch
 		int m_capacityPercent{ MAX_PERCENT };
 		std::string m_serial{ "BAT-000" };
 	public:
-		Battery() = default;
+		Battery();
 		Battery(int chargePercent, int capacityPercent, std::string_view serial);
+
 		~Battery();
 
 		[[nodiscard]] int GetCharge() const;

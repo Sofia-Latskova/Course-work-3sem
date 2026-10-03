@@ -5,6 +5,13 @@
 
 namespace firewatch 
 {
+	Battery::Battery()
+		: m_chargePercent{ MAX_PERCENT }
+		, m_capacityPercent{ MAX_PERCENT }
+		, m_serial{ "BAT-000" }
+	{
+		std::cout << "[Battery] Создан " << m_serial << " (по умолчанию)\n";
+	}
 
 	Battery::Battery(int chargePercent, int capacityPercent, std::string_view serial)
 		:m_chargePercent{ chargePercent },
@@ -20,7 +27,7 @@ namespace firewatch
 
 	Battery::~Battery() 
 	{
-		std::cout << "[Battery] Уничтожен " << m_serial << "\n";
+		std::cout << "[Battery] Уничтожен " << m_serial << "\n\n";
 	}
 
 	int Battery::GetCharge() const
