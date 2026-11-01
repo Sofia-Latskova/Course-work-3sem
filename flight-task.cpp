@@ -5,9 +5,9 @@
 namespace firewatch
 {
 
-    FlightTask::FlightTask(std::string_view zoneName, const std::shared_ptr<Quadcopter>& drone)
+    FlightTask::FlightTask(std::string_view zoneName, const std::shared_ptr<Quadcopter> drone)
         : m_zoneName{ zoneName },
-        m_drone{ drone }
+        m_drone{ std::move(drone) }
     {
         std::cout << "[FlightTask] Создано задание для зоны " << m_zoneName << "\n";
     }
@@ -93,5 +93,21 @@ namespace firewatch
         }
         m_status = Status::eCompleted;
         std::cout << "[FlightTask] Задание в зоне " << m_zoneName << " завершено\n";
+    }
+
+    void FlightTask::PerformMission()
+    {
+        if (auto drone = m_drone.lock())
+        {
+            std::cout << "\n--- Сканирование точек ---\n";
+            drone->Scan();
+            drone->Scan();
+            drone->Scan();
+            std::cout << "Заряд: " << drone->GetBatteryCharge() << "%\n";
+        }
+        else
+        {
+            std::cout << "[FlightTask] Ошибка: дрон потерян, миссия невозможна.\n";
+        }
     }
 }

@@ -24,7 +24,7 @@ namespace firewatch
 		std::weak_ptr<Quadcopter> m_drone;
 	public:
 		FlightTask() = default;
-		FlightTask(std::string_view zoneName, const std::shared_ptr<Quadcopter>& drone);
+		FlightTask(std::string_view zoneName, const std::shared_ptr<Quadcopter> drone);
 		~FlightTask();
 		[[nodiscard]] std::string GetZoneName() const;
 		[[nodiscard]] Status      GetStatus() const;
@@ -38,6 +38,9 @@ namespace firewatch
 
 		//завершить
 		void Complete();
+
+		//работа с дроном
+		void PerformMission();
 
 		//нельзя начать если дрон занят
 		[[nodiscard]] bool CanStart() const;

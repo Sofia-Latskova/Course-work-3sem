@@ -31,13 +31,7 @@ void RunScenario()
             }
 
 // Сканирование
-            std::cout << "\n--- Сканирование точек ---\n";
-            drone->Scan();
-            drone->Scan();
-            drone->Scan();
-
-            std::cout << "Заряд: " << drone->GetBatteryCharge() << "%\n";
-            std::cout << "Состояние: " << drone->GetStateStr() << "\n";
+            task.PerformMission();
 
 // Завершение
             std::cout << "\n--- Завершение задания ---\n";
@@ -47,7 +41,7 @@ void RunScenario()
 // Попытка нарушить правило
             std::cout << "\n--- Попытка нарушить правило ---\n";
             auto weakDrone = std::make_shared<Quadcopter>("DRN-002", 5, 100, "BAT-002");
-            FlightTask task2("Зона-Б", weakDrone); 
+            FlightTask task2("Зона-Б", weakDrone);
             if (!task2.Start())
             {
                 std::cout << "Отказ: заряд " << weakDrone->GetBatteryCharge() << "% ниже минимума для взлёта\n";
