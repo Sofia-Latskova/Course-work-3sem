@@ -1,13 +1,13 @@
-﻿#include "flight-task.hpp"
+#include "flight-task.hpp"
 
 #include <iostream>
 
 namespace firewatch
 {
 
-    FlightTask::FlightTask(std::string_view zoneName, Quadcopter* drone)
+    FlightTask::FlightTask(std::string_view zoneName, const std::shared_ptr<Quadcopter> drone)
         : m_zoneName{ zoneName },
-        m_drone{ drone }
+        m_drone{ std::move(drone) }
     {
         std::cout << "[FlightTask] Создано задание для зоны " << m_zoneName << "\n";
     }
@@ -41,15 +41,12 @@ namespace firewatch
 
     bool FlightTask::CanStart() const
     {
-        if (m_drone == nullptr)
+        if (auto drone = m_drone.lock())
         {
-            return false;
+            return drone->GetState() == Quadcopter::State::eOnBase
+                && m_status == Status::eCreated;
         }
-        if (m_drone->GetState() != Quadcopter::State::eOnBase)
-        {
-            return false;
-        }
-        return m_status == Status::eCreated;
+        return false;
     }
 
     bool FlightTask::Start()
@@ -59,10 +56,9 @@ namespace firewatch
             std::cout << "[FlightTask] Отказ запуска: дрон не готов или занят\n";
             return false;
         }
-        if (!m_drone->TakeOff())
+        if (auto drone = m_drone.lock())
         {
-            std::cout << "[FlightTask] Отказ запуска: дрон не смог взлететь\n";
-            return false;
+            if (!drone->TakeOff()) return false;
         }
         m_status = Status::eInProgress;
         std::cout << "[FlightTask] Задание в зоне " << m_zoneName << " начато\n";
@@ -76,7 +72,10 @@ namespace firewatch
             std::cout << "[FlightTask] Прервать можно только выполняемое задание\n";
             return;
         }
-        m_drone->Land();
+        if (auto drone = m_drone.lock())
+        {
+            drone->Land();
+        }
         m_status = Status::eAborted;
         std::cout << "[FlightTask] Задание прервано. Причина: " << reason << "\n";
     }
@@ -88,8 +87,27 @@ namespace firewatch
             std::cout << "[FlightTask] Завершить можно только выполняемое задание\n";
             return;
         }
-        m_drone->Land();
+        if (auto drone = m_drone.lock())
+        {
+            drone->Land();
+        }
         m_status = Status::eCompleted;
         std::cout << "[FlightTask] Задание в зоне " << m_zoneName << " завершено\n";
+    }
+
+    void FlightTask::PerformMission()
+    {
+        if (auto drone = m_drone.lock())
+        {
+            std::cout << "\n--- Сканирование точек ---\n";
+            drone->Scan();
+            drone->Scan();
+            drone->Scan();
+            std::cout << "Заряд: " << drone->GetBatteryCharge() << "%\n";
+        }
+        else
+        {
+            std::cout << "[FlightTask] Ошибка: дрон потерян, миссия невозможна.\n";
+        }
     }
 }

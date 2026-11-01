@@ -1,22 +1,20 @@
-﻿#include "quadcopter.hpp"
+#include "quadcopter.hpp"
 
 #include <iostream>
 #include <utility>
 
 namespace firewatch 
 {
-	Quadcopter::Quadcopter(std::string_view number, Battery* battery)
+	Quadcopter::Quadcopter(std::string_view number, int chargePercent, int capacityPercent, std::string_view batterySerial)
         :m_number{ number },
-        m_battery{ battery } 
+        m_battery{ std::make_unique<Battery>(chargePercent, capacityPercent, batterySerial) }
     {
 		std::cout << "[Quadcopter] Создан " << m_number << "\n";
 	}
 
 	Quadcopter::~Quadcopter() 
-    {
-        
+    {  
 		std::cout << "[Quadcopter] Уничтожен " << m_number << "\n";
-        delete m_battery;
 	}
 
 	std::string Quadcopter::GetNumber() const

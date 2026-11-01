@@ -1,9 +1,10 @@
-﻿#pragma once
+#pragma once
 
 #include "quadcopter.hpp"
 
 #include <string>
 #include <string_view>
+#include <memory>
 
 namespace firewatch 
 {
@@ -20,10 +21,10 @@ namespace firewatch
 	private:
 		std::string m_zoneName{ "ZONE-0" };
 		Status      m_status{ Status::eCreated };
-		Quadcopter* m_drone{ nullptr };
+		std::weak_ptr<Quadcopter> m_drone;
 	public:
 		FlightTask() = default;
-		FlightTask(std::string_view zoneName, Quadcopter* drone);
+		FlightTask(std::string_view zoneName, const std::shared_ptr<Quadcopter> drone);
 		~FlightTask();
 		[[nodiscard]] std::string GetZoneName() const;
 		[[nodiscard]] Status      GetStatus() const;
@@ -37,6 +38,9 @@ namespace firewatch
 
 		//завершить
 		void Complete();
+
+		//работа с дроном
+		void PerformMission();
 
 		//нельзя начать если дрон занят
 		[[nodiscard]] bool CanStart() const;
