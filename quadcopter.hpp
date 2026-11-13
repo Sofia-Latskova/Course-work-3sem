@@ -23,9 +23,11 @@ namespace firewatch
         State m_state{ State::eOnBase };
         std::unique_ptr<Battery> m_battery;
     public:
-        Quadcopter() = default;
         Quadcopter(std::string_view number, int chargePercent, int capacityPercent, std::string_view batterySerial);
         ~Quadcopter();
+        //конструктор копирования
+        Quadcopter(const Quadcopter& other);
+        Quadcopter& operator=(const Quadcopter& other);
 
         [[nodiscard]] std::string GetNumber() const;
         [[nodiscard]] State GetState() const;

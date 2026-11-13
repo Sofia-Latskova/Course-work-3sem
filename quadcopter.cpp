@@ -17,6 +17,23 @@ namespace firewatch
 		std::cout << "[Quadcopter] Уничтожен " << m_number << "\n";
 	}
 
+    Quadcopter::Quadcopter(const Quadcopter& other)
+        : m_number{ other.m_number }
+        , m_state{ other.m_state }
+        , m_battery{ std::make_unique<Battery>(*other.m_battery) }   
+    {
+        std::cout << "[Quadcopter] Копия: " << m_number << "\n";
+    }
+
+    Quadcopter& Quadcopter::operator=(const Quadcopter& other)
+    {
+        if (this == &other) return *this;         
+        m_number = other.m_number;
+        m_state = other.m_state;
+        *m_battery = *other.m_battery;              
+        return *this;
+    }
+
 	std::string Quadcopter::GetNumber() const
 	{
 		return m_number;
