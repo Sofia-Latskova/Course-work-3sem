@@ -1,137 +1,110 @@
-#include "battery.hpp"
-#include "flight-task.hpp"
-#include "quadcopter.hpp"
-
+#include "TempSensor.hpp"
+#include "SmokeSensor.hpp"
+#include "FlameSensor.hpp"
+#include "Quadcopter.hpp"
 
 #include <iostream>
-#include <windows.h>
 #include <memory>
+#include <vector>
+#include <string>
+#include <cstdlib>
+#include <ctime>
+#include <windows.h>
 
 using namespace firewatch;
 
-void RunScenario()
-{
-    std::cout << "\n ОБЛЁТ ЗОНЫ \n";
-
-    {
-        std::cout << "\n--- Создание дрона ---\n";
-        auto drone = std::make_shared<Quadcopter>("DRN-001", 22, 100, "BAT-001");
-        std::cout << "Дрон: " << drone->GetNumber() << ", состояние: " << drone->GetStateStr() << "\n";
-        std::cout << "Заряд через дрон: " << drone->GetBatteryCharge() << "%\n";
-        {
-            std::cout << "\n--- Создание задания ---\n";
-            FlightTask task("Зона-А", drone);
-            std::cout << "Статус: " << task.GetStatusStr() << "\n";
-
-// Запуск
-            std::cout << "\n--- Корректный запуск ---\n";
-            if (task.Start())
-            {
-                std::cout << "Задание запущено. Статус: " << task.GetStatusStr() << "\n";
-            }
-
-// Сканирование
-            task.PerformMission();
-
-// Завершение
-            std::cout << "\n--- Завершение задания ---\n";
-            task.Complete();
-            std::cout << "Статус: " << task.GetStatusStr() << "\n";
-
-// Попытка нарушить правило
-            std::cout << "\n--- Попытка нарушить правило ---\n";
-            auto weakDrone = std::make_shared<Quadcopter>("DRN-002", 5, 100, "BAT-002");
-            FlightTask task2("Зона-Б", weakDrone);
-            if (!task2.Start())
-            {
-                std::cout << "Отказ: заряд " << weakDrone->GetBatteryCharge() << "% ниже минимума для взлёта\n";
-            }
-
-            std::cout << "\n--- Внутренний блок закрыт: задание уничтожено ---\n";
-        }
-
-        std::cout << "\nдрон жив: " << drone->GetNumber() << ", состояние: " << drone->GetStateStr() << "\n";
-        std::cout << "\n--- Конец внешнего блока: дрон умирает с аккумулятором ---\n";
-        
-          
-    }
-
-    std::cout << "\n--- weak_ptr:(lock) ---\n";
-    {
-       auto drone = std::make_shared<Quadcopter>("DRN-003", 80, 100, "BAT-003");
-       FlightTask task("Зона-W", drone);
-
-       std::cout << "Попытка запустить задание (дрон жив):\n";
-       if (task.Start()) {
-           std::cout << "Успешно! Задание запущено.\n";
-       }
-
-       std::cout << "\nУничтожаем дрон снаружи\n";
-       drone.reset();
-       std::cout << "Попытка запустить задание (дрон мертв):\n";
-       if (!task.Start()) {
-           std::cout << "Отказ! Задание корректно обработало пустой lock().\n";
-       }         
-    }
-}
-
-void DemoMemory()
-{
-    std::cout << "\n ПАМЯТЬ \n";
-    std::cout << "\n--- unique_ptr: один владелец ---\n";
-    {
-        auto battery = std::make_unique<Battery>(80, 100, "BAT-001");
-        std::cout << "Заряд: " << battery->GetCharge() << "%\n";
-    }
-
-    std::cout << "\n--- Передача владения unique_ptr ---\n";
-    {
-        auto owner1 = std::make_unique<Battery>(60, 100, "BAT-MOVE");
-        auto owner2 = std::move(owner1); // Передаем владение
-        if (!owner1) 
-        {
-            std::cout << "owner1 пуст: владение передано\n";
-        }
-    }
-
-    std::cout << "\n--- shared_ptr: счетчик владельцев ---\n";
-    {
-        auto drone = std::make_shared<Quadcopter>("DRN-003", 70, 100, "BAT-003");
-        std::cout << "Владельцев drone: " << drone.use_count() << "\n"; // 1
-        {
-            auto droneCopy = drone;
-            std::cout << "Владельцев после копии: " << drone.use_count() << "\n"; // 2
-        } // копия уничтожена
-        std::cout << "Владельцев после выхода: " << drone.use_count() << "\n"; // 1
-    }
- 
-    std::cout << "\n--- Массивы: объектов и динамических объектов ---\n";
-    // Динамический массив объектов
-    {
-        std::cout << "\n- Динамический массив -\n";
-        auto arr = std::make_unique<Battery[]>(2);
-        std::cout << "Массив: " << arr[0].GetSerial() << ", " << arr[1].GetSerial() << "\n";
-    }
-
-    // Массив динамических объектов
-    {
-        std::cout << "\n- Массив динамических объектов -\n";
-        auto arr = std::make_unique<std::unique_ptr<Battery>[]>(2);
-        arr[0] = std::make_unique<Battery>(50, 100, "BAT-10");
-        arr[1] = std::make_unique<Battery>(60, 100, "BAT-11");
-        std::cout << "Указатели: " << arr[0]->GetSerial() << ", " << arr[1]->GetSerial() << "\n";
-    }
-}
-
 int main()
 {
-    SetConsoleOutputCP(65001);  
+    SetConsoleOutputCP(65001);
     SetConsoleCP(65001);
-    std::cout << "========== Лабораторная №3 ==========\n";
+    std::srand(static_cast<unsigned>(std::time(nullptr)));
 
-    RunScenario();     
-    DemoMemory();      
-
-    std::cout << "\n========== Конец программы ==========\n";
-    return 0;
+    std::cout << "===========Lab-04 Наследование======\n\n";
+    std::cout << "--- 0. Создание квадрокоптера-носителя ---\n";
+    auto quad = std::make_shared<Quadcopter>("DRN-001", 100, 100, "BAT-001");
+    std::cout << "\n";
+//Массив наследников
+    std::cout << "--- 1. Создание массива наследников ---\n";
+    std::vector<std::unique_ptr<BaseSensor>> sensors;
+    sensors.push_back(std::make_unique<TempSensor>("TEMP-1", quad, 25.5));
+    sensors.push_back(std::make_unique<SmokeSensor>("SMOKE-1", quad, 0.1));
+    sensors.push_back(std::make_unique<FlameSensor>("FLAME-1", quad, 15));
+//полиморфизм
+    std::cout << "\n--- 2. Полиморфизм (опрос датчиков) ---\n";
+    for (const auto& sensor : sensors)
+    {
+        sensor->ReadValue();
+        std::cout << sensor->Describe() << "\n";
+        std::cout << "-------------------------\n";
+    }
+//деструктор
+    std::cout << "\n--- 3. Уничтожение через указатель на базовый класс ---\n";
+    std::cout << "Создаём датчик во вложенном блоке...\n";
+    {
+        std::unique_ptr<BaseSensor> temp =
+            std::make_unique<TempSensor>("TEMP-TEMP", quad, 30.0);
+        std::cout << "Выходим из блока...\n";
+    }
+//копирование
+    std::cout << "--- 4. Копирование ---\n";
+    auto original = std::make_shared<TempSensor>("TEMP-ORIG", quad, 20.0);
+    original->GetQuadcopter()->TakeOff();   //в полете
+    original->ReadValue();
+    std::cout << "\nПОВЕРХНОСТНАЯ КОПИЯ\n";
+    std::cout << "Оригинал до изменений:\n" << original->Describe() << "\n";
+    TempSensor copy = *original;              
+    copy.GetQuadcopter()->Land();          
+    copy.ReadValue();
+    std::cout << "\nОригинал после изменения дрона через копию:\n"
+        << original->Describe() << "\n";
+    std::cout << "Копия:\n" << copy.Describe() << "\n";
+    original->GetQuadcopter()->TakeOff();     // в полете
+    std::cout << "\nГЛУБОКАЯ КОПИЯ:\n";
+    auto deep = original->Clone();             // свой дрон
+    std::cout << "Оригинал до изменений:\n" << original->Describe() << "\n";
+    deep->GetQuadcopter()->Land();            
+    deep->ReadValue();
+    std::cout << "\nОригинал после изменения deep-копии:\n" << original->Describe() << "\n";
+    std::cout << "Deep-копия:\n" << deep->Describe() << "\n";
+//самоприсваивание
+    std::cout << "\n--- 5. Проверка this ---\n";
+    TempSensor assignTest("TEMP-ASSIGN", quad, 25.0);
+    assignTest.ReadValue();
+    std::cout << "До самоприсваивания:\n" << assignTest.Describe() << "\n";
+    std::cout << "Выполняем: assignTest = assignTest\n";
+    assignTest = assignTest;                       
+    std::cout << "\nПосле самоприсваивания:\n" << assignTest.Describe() << "\n";
+//стат счетчик
+    std::cout << "\n--- 6. Статический счётчик ---\n";
+    for (const auto& sensor : sensors)
+    {
+        std::cout << " ID: " << sensor->GetId();
+    }
+    std::cout << "\nПоследний выданный ID: " << BaseSensor::NextId() - 1 << "\n\n";
+//строки
+    std::cout << "--- 7. Работа со строками ---\n";
+    std::string prefix = "Датчик: ";
+    std::string fullName = prefix + sensors[0]->GetSerial();
+    std::cout << "Конкатенация: " << fullName << "\n";
+    if (fullName.find("TEMP") != std::string::npos)
+    {
+        std::cout << "Поиск 'TEMP': найдено\n";
+    }
+    std::cout << "Подстрока: " << fullName.substr(8, 4) << "\n";
+    if (prefix == "Датчик: ")
+    {
+        std::cout << "Сравнение: строки равны\n";
+    }
+    std::cout << "\n";
+    std::cout << "\n=== КОНЕЦ ===\n";
 }
+
+
+
+
+
+
+
+
+
+
