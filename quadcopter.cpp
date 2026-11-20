@@ -1,5 +1,5 @@
 #include "quadcopter.hpp"
-
+#include "exceptions.hpp"
 #include <iostream>
 #include <utility>
 
@@ -12,7 +12,7 @@ namespace firewatch
 		std::cout << "[Quadcopter] Создан " << m_number << "\n";
 	}
 
-	Quadcopter::~Quadcopter() 
+	Quadcopter::~Quadcopter()  noexcept
     {  
 		std::cout << "[Quadcopter] Уничтожен " << m_number << "\n";
 	}
@@ -65,8 +65,7 @@ namespace firewatch
     {
         if (!CanTakeOff())
         {
-            std::cout << "[Quadcopter] Отказ взлёта: заряд "<< m_battery->GetCharge() << "% ниже минимума "<< Battery::MIN_CHARGE << "%\n";
-            return false;
+            throw LowBatteryError{ m_battery->GetCharge(), Battery::MIN_CHARGE };
         }
         m_state = State::eFlying;
         std::cout << "[Quadcopter] " << m_number << " взлетел\n";
@@ -83,8 +82,9 @@ namespace firewatch
     {
         if (m_state != State::eFlying)
         {
-            std::cout << "[Quadcopter] Сканирование невозможно: не в полёте\n";
-            return;
+            throw InvalidMissionState{
+            "сканирование невозможно: дрон не в полёте (состояние: "
+            + GetStateStr() + ")" };
         }
         m_state = State::eScanning;
         m_battery->Consume(2);
@@ -92,8 +92,7 @@ namespace firewatch
         if (m_battery->GetCharge() < Battery::CRITICAL_CHARGE)
         {
             m_state = State::eReturning;
-            std::cout << "[Quadcopter] " << m_number << " возвращается на базу: заряд ниже критического" << Battery::CRITICAL_CHARGE << "%)\n";
-            return;
+            throw LowBatteryError{ m_battery->GetCharge(), Battery::CRITICAL_CHARGE };
         }
         m_state = State::eFlying;
     }
@@ -101,5 +100,11 @@ namespace firewatch
     bool Quadcopter::CanTakeOff() const
     {
         return m_state == State::eOnBase && m_battery->GetCharge() >= Battery::MIN_CHARGE;
+    }
+
+    std::string Quadcopter::ToReportLine() const
+    {
+        return m_number + ";DRONE;" + std::to_string(m_battery->GetCharge())
+            + "%;" + GetStateStr();
     }
 }

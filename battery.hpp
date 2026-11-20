@@ -1,10 +1,12 @@
-﻿#pragma once
+#pragma once
+
+#include "Interfaces.hpp"
 #include <string>
 #include <string_view>
 
 namespace firewatch
 {
-	class Battery
+	class Battery: public IDiagnosable, public IReportable
 	{
 	public:
 		static constexpr int MIN_CHARGE = 20;
@@ -17,8 +19,12 @@ namespace firewatch
 	public:
 		Battery();
 		Battery(int chargePercent, int capacityPercent, std::string_view serial);
+		~Battery() noexcept;
 
-		~Battery();
+		Battery(const Battery&) = default;
+		Battery& operator=(const Battery&) = default;
+		Battery(Battery&&) noexcept = default;
+		Battery& operator=(Battery&&) noexcept = default;
 
 		[[nodiscard]] int GetCharge() const;
 		[[nodiscard]] int GetCapacity() const;
@@ -32,6 +38,25 @@ namespace firewatch
 
 		//проверка заряд в диапазоне
 		[[nodiscard]] bool IsValid() const;
+
+		//IDiagnosable 
+		[[nodiscard]] bool IsOperational() const override
+		{
+			return m_chargePercent >= CRITICAL_CHARGE;
+		}
+		[[nodiscard]] int HealthPercent() const override
+		{
+			return m_chargePercent;
+		}
+
+		//IReportable
+		[[nodiscard]] std::string_view ReportSection() const override
+		{
+			return "ПИТАНИЕ";
+		}
+		[[nodiscard]] std::string ToReportLine() const override;
+
+
 	};
 }
 
