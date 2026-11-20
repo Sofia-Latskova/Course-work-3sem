@@ -1,5 +1,5 @@
-﻿#include "battery.hpp"
-
+#include "battery.hpp"
+#include "exceptions.hpp"
 #include <iostream>
 
 
@@ -25,7 +25,7 @@ namespace firewatch
 		std::cout << "[Battery] Создан " << m_serial << " заряд=" << m_chargePercent << "%\n";
 	}
 
-	Battery::~Battery() 
+	Battery::~Battery() noexcept
 	{
 		std::cout << "[Battery] Уничтожен " << m_serial << "\n\n";
 	}
@@ -51,11 +51,11 @@ namespace firewatch
 		{
 			return;
 		}
-		m_chargePercent -= percent;
-		if (m_chargePercent < 0)
+		if (m_chargePercent - percent < 0)
 		{
-			m_chargePercent = 0;
+			throw BatteryOverDischarge{ m_chargePercent, percent };
 		}
+		m_chargePercent -= percent;
 		std::cout << "[Battery] " << m_serial << " разряжен до " << m_chargePercent << "%\n";
 	}
 
@@ -76,5 +76,9 @@ namespace firewatch
 	bool Battery::IsValid() const
 	{
 		return m_chargePercent >= 0 && m_chargePercent <= m_capacityPercent;
+	}
+	std::string Battery::ToReportLine() const
+	{
+		return m_serial + ";BATTERY;" + std::to_string(m_chargePercent) + "%";
 	}
 }

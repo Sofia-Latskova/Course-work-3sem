@@ -1,5 +1,5 @@
 #pragma once
-
+#include "Interfaces.hpp"
 #include "quadcopter.hpp"
 #include <string>
 #include <string_view>
@@ -8,7 +8,8 @@
 
 namespace firewatch {
 
-    class BaseSensor {
+    class BaseSensor: public IDiagnosable, public IReportable
+    {
         //можно наследникам, но наружу не попадает
     protected:
        std::string m_serial;
@@ -27,7 +28,7 @@ namespace firewatch {
         BaseSensor(std::string_view serial, std::shared_ptr<Quadcopter> quadcopter);
 
         //виртуальный деструктор virtual - наследники могут менять и в своем классе использовать не от базового, а от своего
-        virtual ~BaseSensor();
+        virtual ~BaseSensor() noexcept;
 
         //копирование
        BaseSensor(const BaseSensor& other) = default;
@@ -35,8 +36,6 @@ namespace firewatch {
 //перемещение
        BaseSensor(BaseSensor&& other) noexcept = default;
        BaseSensor& operator=(BaseSensor&& other) noexcept = default;
-        //чисто виртуальный метод - наследник пишет сам, делает класс абстрактным
-        virtual double ReadValue() const = 0;
 
         // Виртуальный метод с реализацией (наследник может вызвать базовый метод и добавить чтото свое)
         virtual std::string Describe() const;
@@ -58,6 +57,33 @@ namespace firewatch {
 
         // Статический метод 
         static int NextId() { return ++m_lastId; }
+
+        //IDiagnosable
+        [[nodiscard]] bool IsOperational() const override
+        {
+            return !m_isBroken && m_durability > 0;
+        }
+        [[nodiscard]] int HealthPercent() const override
+        {
+            return m_durability;
+        }
+
+        
+        // Раннее связывание: невиртуальный, наследник скрывает
+        [[nodiscard]] std::string GetKind() const { return "датчик"; }
+
+        // Позднее связывание: виртуальный
+        [[nodiscard]] virtual std::string GetTypeName() const { return "датчик"; }
+//IReportable
+        [[nodiscard]] std::string_view ReportSection() const override
+        {
+            return "ДАТЧИКИ";
+        }
+        [[nodiscard]] std::string ToReportLine() const override
+        {
+            return GetSerial() + ";" + GetTypeName() + ";"
+                + (IsOperational() ? "OK" : "FAIL");
+        }
 
     };
 }

@@ -1,18 +1,24 @@
 #include "flight-task.hpp"
-
+#include "exceptions.hpp"
 #include <iostream>
+#include <utility>
 
 namespace firewatch
 {
 
-    FlightTask::FlightTask(std::string_view zoneName, const std::shared_ptr<Quadcopter> drone)
+    FlightTask::FlightTask(std::string_view zoneName, const std::shared_ptr<Quadcopter> drone, std::unique_ptr<IAlertPolicy> policy)
         : m_zoneName{ zoneName },
         m_drone{ std::move(drone) }
+        , m_policy{ std::move(policy) }
     {
-        std::cout << "[FlightTask] Создано задание для зоны " << m_zoneName << "\n";
+        if (!m_policy)
+        {
+            throw InvalidMissionState{ "политика сигнализации не задана" };
+        }
+        std::cout << "[FlightTask] Создано задание для зоны " << m_zoneName << " (политика: " << m_policy->AlertChannel() << "\n";
     }
 
-    FlightTask::~FlightTask()
+    FlightTask::~FlightTask() noexcept
     {
         std::cout << "[FlightTask] Уничтожено задание для зоны " << m_zoneName << "\n";
     }
@@ -53,8 +59,9 @@ namespace firewatch
     {
         if (!CanStart())
         {
-            std::cout << "[FlightTask] Отказ запуска: дрон не готов или занят\n";
-            return false;
+            throw InvalidMissionState{
+                "нельзя начать: дрон не готов или задание не в статусе 'создано'"
+            };
         }
         if (auto drone = m_drone.lock())
         {
@@ -84,8 +91,9 @@ namespace firewatch
     {
         if (m_status != Status::eInProgress)
         {
-            std::cout << "[FlightTask] Завершить можно только выполняемое задание\n";
-            return;
+            throw InvalidMissionState{
+                "завершить можно только выполняемое задание (текущий статус: "
+                + GetStatusStr() + ")" };
         }
         if (auto drone = m_drone.lock())
         {
@@ -97,17 +105,37 @@ namespace firewatch
 
     void FlightTask::PerformMission()
     {
-        if (auto drone = m_drone.lock())
+        auto drone = m_drone.lock();
+        if (!drone)
         {
+            throw InvalidMissionState{ "дрон потерян, миссия невозможна" };
+        }
             std::cout << "\n--- Сканирование точек ---\n";
             drone->Scan();
             drone->Scan();
             drone->Scan();
             std::cout << "Заряд: " << drone->GetBatteryCharge() << "%\n";
-        }
-        else
+  
+    }
+
+    void FlightTask::SetPolicy(std::unique_ptr<IAlertPolicy> policy)
+    {
+        if (!policy)
         {
-            std::cout << "[FlightTask] Ошибка: дрон потерян, миссия невозможна.\n";
+            throw InvalidMissionState{ "нельзя установить пустую политику" };
         }
+        m_policy = std::move(policy);
+        std::cout << "[FlightTask] Политика заменена на: "
+            << m_policy->AlertChannel() << "\n";
+    }
+
+    std::pair<std::string, std::string>
+        FlightTask::TriggerAlert(const ScanResult& scan) const
+    {
+        if (!m_policy)
+        {
+            throw InvalidMissionState{ "политика сигнализации не задана" };
+        }
+        return { m_policy->AlertChannel(), m_policy->FormatAlert(scan) };
     }
 }

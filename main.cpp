@@ -1,7 +1,13 @@
 #include "TempSensor.hpp"
 #include "SmokeSensor.hpp"
 #include "FlameSensor.hpp"
-#include "Quadcopter.hpp"
+#include "quadcopter.hpp"
+#include "battery.hpp"
+#include "flight-task.hpp"
+#include "Interfaces.hpp"
+#include "ScanResult.hpp"
+#include "exceptions.hpp"
+#include "AlertPolicies.hpp"
 
 #include <iostream>
 #include <memory>
@@ -10,6 +16,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <windows.h>
+#include <map>
 
 using namespace firewatch;
 
@@ -19,82 +26,171 @@ int main()
     SetConsoleCP(65001);
     std::srand(static_cast<unsigned>(std::time(nullptr)));
 
-    std::cout << "===========Lab-04 Наследование======\n\n";
-    std::cout << "--- 0. Создание квадрокоптера-носителя ---\n";
-    auto quad = std::make_shared<Quadcopter>("DRN-001", 100, 100, "BAT-001");
-    std::cout << "\n";
-//Массив наследников
-    std::cout << "--- 1. Создание массива наследников ---\n";
-    std::vector<std::unique_ptr<BaseSensor>> sensors;
-    sensors.push_back(std::make_unique<TempSensor>("TEMP-1", quad, 25.5));
-    sensors.push_back(std::make_unique<SmokeSensor>("SMOKE-1", quad, 0.1));
-    sensors.push_back(std::make_unique<FlameSensor>("FLAME-1", quad, 15));
-//полиморфизм
-    std::cout << "\n--- 2. Полиморфизм (опрос датчиков) ---\n";
-    for (const auto& sensor : sensors)
+    std::cout << "========== ЛР 5. Полиморфизм ==========\n";
+    auto drone = std::make_shared<Quadcopter>("DRN-001", 80, 100, "BAT-001");
+    auto temp = std::make_shared<TempSensor>("TS-001", drone, 45.0);
+    auto smoke = std::make_shared<SmokeSensor>("SS-001", drone, 0.2);
+    auto flame = std::make_shared<FlameSensor>("FS-001", drone, 10);
+
+//работа через интерфейсы
+    std::cout << "\n===== работа через интерфейсы =====\n";
+
+    std::cout << "\n-- IDiagnosable --\n";
+    std::vector<const IDiagnosable*> diag{ temp.get(), drone.get() };
+    for (const auto* u : diag)
+        std::cout << "  Health = " << u->HealthPercent() << "%"
+        << (u->IsOperational() ? " [OK]" : " [FAIL]") << "\n";
+    std::cout << "\n-- IReportable --\n";
+    std::vector<const IReportable*> report{ temp.get(), smoke.get(), flame.get(), drone.get()};
+    std::map<std::string, std::vector<std::string>> bySection;
+    for (const auto* item : report)
+        bySection[std::string(item->ReportSection())].push_back(item->ToReportLine());
+    for (const auto& [section, lines] : bySection)
     {
-        sensor->ReadValue();
-        std::cout << sensor->Describe() << "\n";
-        std::cout << "-------------------------\n";
+        std::cout << "  === " << section << " ===\n";
+        for (const auto& line : lines) std::cout << "    " << line << "\n";
     }
-//деструктор
-    std::cout << "\n--- 3. Уничтожение через указатель на базовый класс ---\n";
-    std::cout << "Создаём датчик во вложенном блоке...\n";
+
+//раннее и позднее связывание
+    std::cout << "\n=== раннее/позднее связывание =====\n";
+    std::unique_ptr<BaseSensor> s = std::make_unique<TempSensor>("TS-002", drone, 45.0);
+    std::cout << "  GetKind()     (невиртуальный, раннее):  " << s->GetKind() << "\n";
+    std::cout << "  GetTypeName() (виртуальный, позднее):   " << s->GetTypeName() << "\n";
+
+//dynamic_cast
+    std::cout << "\n====dynamic_cast =====\n";
+    std::vector<const IDiagnosable*> units{ temp.get(), smoke.get(), flame.get(), drone.get() };
+    for (const auto* u : units)
     {
-        std::unique_ptr<BaseSensor> temp =
-            std::make_unique<TempSensor>("TEMP-TEMP", quad, 30.0);
-        std::cout << "Выходим из блока...\n";
+        if (auto* sc = dynamic_cast<const IScannable*>(u))
+        {
+            try {
+                std::cout << "  [OK]   " << sc->SensorSerial()
+                    << " -> " << sc->ReadValue() << "\n";
+            }
+            catch (const SensorFailure& e) {
+                std::cout << "  [FAIL] " << e.what() << "\n";
+            }
+        }
+        else
+        {
+            std::cout << "  [SKIP] объект не реализует IScannable\n";
+        }
     }
-//копирование
-    std::cout << "--- 4. Копирование ---\n";
-    auto original = std::make_shared<TempSensor>("TEMP-ORIG", quad, 20.0);
-    original->GetQuadcopter()->TakeOff();   //в полете
-    original->ReadValue();
-    std::cout << "\nПОВЕРХНОСТНАЯ КОПИЯ\n";
-    std::cout << "Оригинал до изменений:\n" << original->Describe() << "\n";
-    TempSensor copy = *original;              
-    copy.GetQuadcopter()->Land();          
-    copy.ReadValue();
-    std::cout << "\nОригинал после изменения дрона через копию:\n"
-        << original->Describe() << "\n";
-    std::cout << "Копия:\n" << copy.Describe() << "\n";
-    original->GetQuadcopter()->TakeOff();     // в полете
-    std::cout << "\nГЛУБОКАЯ КОПИЯ:\n";
-    auto deep = original->Clone();             // свой дрон
-    std::cout << "Оригинал до изменений:\n" << original->Describe() << "\n";
-    deep->GetQuadcopter()->Land();            
-    deep->ReadValue();
-    std::cout << "\nОригинал после изменения deep-копии:\n" << original->Describe() << "\n";
-    std::cout << "Deep-копия:\n" << deep->Describe() << "\n";
-//самоприсваивание
-    std::cout << "\n--- 5. Проверка this ---\n";
-    TempSensor assignTest("TEMP-ASSIGN", quad, 25.0);
-    assignTest.ReadValue();
-    std::cout << "До самоприсваивания:\n" << assignTest.Describe() << "\n";
-    std::cout << "Выполняем: assignTest = assignTest\n";
-    assignTest = assignTest;                       
-    std::cout << "\nПосле самоприсваивания:\n" << assignTest.Describe() << "\n";
-//стат счетчик
-    std::cout << "\n--- 6. Статический счётчик ---\n";
-    for (const auto& sensor : sensors)
+
+//конфигурирование 
+    std::cout << "\n====конфигурирование=====\n";
+    FlightTask task{ "ZONE-A", drone, std::make_unique<SirenAlert>() };
+    ScanResult scan;
+    scan.readings = {
+        { "TS-001", "температура", 55.0, true },
+        { "SS-001", "дым",         0.7,  true },
+        { "FS-001", "пламя",       45.0, true },
+    };
+    scan.hasReliableData = true;
+    auto printAlert = [&](const char* label) {
+        auto [channel, message] = task.TriggerAlert(scan);
+        std::cout << "  " << label << " -> [" << channel << "] " << message << "\n";
+        };
+    printAlert("Сирена       ");
+    task.SetPolicy(std::make_unique<SilentLogAlert>());
+    printAlert("Тихий лог    ");
+    task.SetPolicy(std::make_unique<EmercomCallAlert>());
+    printAlert("Вызов МЧС    ");
+
+//исключения
+
+    std::cout << "\n=====исключения =====\n";
+    std::cout << "\n Успешный прогон:\n"; 
+    auto drone2 = std::make_shared<Quadcopter>("DRN-002", 80, 100, "BAT-002");
+    FlightTask ok{ "ZONE-OK", drone2, std::make_unique<SirenAlert>() };
+    try
     {
-        std::cout << " ID: " << sensor->GetId();
+        ok.Start();
+        drone2->Scan();
+        drone2->Scan();
+        ok.Complete();
     }
-    std::cout << "\nПоследний выданный ID: " << BaseSensor::NextId() - 1 << "\n\n";
-//строки
-    std::cout << "--- 7. Работа со строками ---\n";
-    std::string prefix = "Датчик: ";
-    std::string fullName = prefix + sensors[0]->GetSerial();
-    std::cout << "Конкатенация: " << fullName << "\n";
-    if (fullName.find("TEMP") != std::string::npos)
+    catch (const std::exception& e)
     {
-        std::cout << "Поиск 'TEMP': найдено\n";
+        std::cout << "  Неожиданная ошибка: " << e.what() << "\n";
     }
-    std::cout << "Подстрока: " << fullName.substr(8, 4) << "\n";
-    if (prefix == "Датчик: ")
+    auto lowBat = std::make_shared<Quadcopter>("DRN-LOW", 5, 100, "BAT-LOW");
+    FlightTask bad{ "ZONE-LOW", lowBat, std::make_unique<SirenAlert>() };
+    std::cout << "\n Низкий заряд при взлёте:\n";
+    try
     {
-        std::cout << "Сравнение: строки равны\n";
+        bad.Start();
     }
+    catch (const LowBatteryError& e)
+    {
+        std::cout << "  [LowBatteryError] " << e.what() << "\n";
+    }
+    catch (const std::exception& e)
+    {
+        std::cout << "  [std::exception] " << e.what() << "\n";
+    }
+
+    std::cout << "\n Сканирование не в полёте:\n";
+    auto drone3 = std::make_shared<Quadcopter>("DRN-003", 80, 100, "BAT-003");
+    try
+    {
+        drone3->Scan();
+    }
+    catch (const InvalidMissionState& e)
+    {
+        std::cout << "  [InvalidMissionState] " << e.what() << "\n";
+    }
+    catch (const std::exception& e)
+    {
+        std::cout << "  [std::exception] " << e.what() << "\n";
+    }
+
+    std::cout << "\nПрервать неначатое задание:\n";
+    auto drone4 = std::make_shared<Quadcopter>("DRN-004", 80, 100, "BAT-004");
+    FlightTask t{ "ZONE-4", drone4, std::make_unique<SirenAlert>() };
+    try
+    {
+        t.Abort("тест");
+    }
+    catch (const InvalidMissionState& e)
+    {
+        std::cout << "  [InvalidMissionState] " << e.what() << "\n";
+    }
+    catch (const std::exception& e)
+    {
+        std::cout << "  [std::exception] " << e.what() << "\n";
+    }
+
+    std::cout << "\n Неисправный датчик:\n";  
+    auto broken = std::make_shared<TempSensor>("TS-BROKEN", drone, 45.0);
+    try
+    {
+        broken->Break();
+        broken->ReadValue();
+    }
+    catch (const SensorFailure& e)
+    {
+        std::cout << "  [SensorFailure] " << e.what() << "\n";
+    }
+    catch (const std::exception& e)
+    {
+        std::cout << "  [std::exception] " << e.what() << "\n";
+    }
+
+    std::cout << "\n Порядок catch (частный -> общий):\n"; 
+    auto low = std::make_shared<Quadcopter>("DRN-X", 5, 100, "BAT-X");
+    try
+    {       
+        low->TakeOff();
+    }
+    catch (const SensorFailure& e) { std::cout << "  SensorFailure: " << e.what() << "\n"; }
+    catch (const LowBatteryError& e) { std::cout << "  LowBatteryError: " << e.what() << "\n"; }
+    catch (const BatteryOverDischarge& e) { std::cout << "  BatteryOverDischarge: " << e.what() << "\n"; }
+    catch (const InvalidMissionState& e) { std::cout << "  InvalidMissionState: " << e.what() << "\n"; }
+    catch (const FirewatchError& e) { std::cout << "  FirewatchError: " << e.what() << "\n"; }
+    catch (const std::exception& e) { std::cout << "  std::exception: " << e.what() << "\n"; }
+
     std::cout << "\n";
     std::cout << "\n=== КОНЕЦ ===\n";
 }

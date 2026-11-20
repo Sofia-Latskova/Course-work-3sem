@@ -1,12 +1,13 @@
 #pragma once
 #include "BaseSensor.hpp"
+#include "Interfaces.hpp"
 
 #include <memory>
 #include <string>
 #include <string_view>
 
 namespace firewatch {
-	class SmokeSensor final : public BaseSensor
+	class SmokeSensor final : public BaseSensor, public IScannable
 	{
 	private:
 		double m_smokeLevel{ 0.0 };
@@ -18,7 +19,15 @@ namespace firewatch {
 
 		~SmokeSensor() override;
 
+		//IScannable
 		double ReadValue() const override;
+		[[nodiscard]] std::string_view SensorSerial() const  override
+		{
+			return GetSerial();
+		}
+
+		[[nodiscard]] std::string GetKind() const { return "датчик дыма"; }
+		[[nodiscard]] std::string GetTypeName() const override { return "дым"; }
 
 		void SetSmokeLevel(double level);
 

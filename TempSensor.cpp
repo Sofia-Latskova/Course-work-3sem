@@ -1,5 +1,5 @@
 #include "TempSensor.hpp"
-
+#include "exceptions.hpp"
 #include <iostream>
 #include <cstdlib>
 #include <utility>
@@ -23,7 +23,7 @@ namespace firewatch {
 	//снятие показаний
 	double TempSensor::ReadValue() const
 	{
-		if (WearDown()) return -999.0; //если сломан или закончился ресурс
+		if (WearDown())  throw SensorFailure{ GetSerial() }; //если сломан или закончился ресурс
 		double noise = (std::rand() % 100 - 50) / 100.0; //погрешность
 		m_lastValue = m_temperature + noise; 
 		return m_lastValue;
