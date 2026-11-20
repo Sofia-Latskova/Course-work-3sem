@@ -1,4 +1,5 @@
 #pragma once
+#include "Interfaces.hpp"
 #include "BaseSensor.hpp"
 #include <memory>
 #include <string>
@@ -7,7 +8,7 @@
 namespace firewatch {
 
     // final запрещает наследование от этого класса
-    class FlameSensor final : public BaseSensor
+    class FlameSensor final : public BaseSensor, public IScannable
     {
     private:
         int m_intensity{ 0 }; // Интенсивность пламени от 0 до 100 баллов
@@ -17,8 +18,14 @@ namespace firewatch {
 
         ~FlameSensor() override;
 
-        // Возвращает интенсивность (0-100)
+        //IScannable
         double ReadValue() const override;
+        [[nodiscard]] std::string_view SensorSerial() const override
+        {
+            return GetSerial();
+        }
+        [[nodiscard]] std::string GetKind() const { return "датчик пламени"; }
+        [[nodiscard]] std::string GetTypeName() const override { return "пламя"; }
 
         // Переопределение БЕЗ вызова базового класса
         std::string Describe() const override;

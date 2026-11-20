@@ -1,4 +1,5 @@
 #include "SmokeSensor.hpp"
+#include "exceptions.hpp"
 #include <iostream>
 #include <cstdlib>
 #include <utility>
@@ -18,7 +19,7 @@ namespace firewatch {
 
 	double SmokeSensor::ReadValue() const
 	{
-        if (WearDown()) return -999.0; //если сломался
+        if (WearDown()) throw SensorFailure{ GetSerial() }; //если сломался
         // Прогрев
         if (m_warmupCounter < 2)
         {
@@ -31,7 +32,7 @@ namespace firewatch {
         {
             std::cout << "[SmokeSensor] ПЕРЕГРУЗКА! Датчик " << GetSerial() << " сгорел!\n";
             Break();
-            return -999.0;
+            throw SensorFailure{ GetSerial() };
         }
         // Накопление тревог
         if (m_smokeLevel > 0.5)

@@ -1,12 +1,14 @@
 #pragma once
 #include "BaseSensor.hpp"
+#include "Interfaces.hpp"
+
 #include <memory>
 #include <string>
 #include <string_view>
 
 
 namespace firewatch {
-	class TempSensor : public BaseSensor
+	class TempSensor : public BaseSensor, public IScannable
 	{
 	private:
 		double m_temperature{ 0.0 };
@@ -18,8 +20,15 @@ namespace firewatch {
 		//деструктор переопределенный под этот класс
 		~TempSensor() override;
 
-		//виртуальное свойство
 		double ReadValue() const override;
+		[[nodiscard]] std::string_view SensorSerial() const  override
+		{
+			return GetSerial();
+		}
+
+		//IScannable
+		[[nodiscard]] std::string GetKind() const { return "датчик температуры"; }
+		[[nodiscard]] std::string GetTypeName() const override { return "температура"; }
 
 		void SetTemperature(double temperature);
 

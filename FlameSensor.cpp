@@ -1,4 +1,5 @@
 #include "FlameSensor.hpp"
+#include "exceptions.hpp"
 #include <iostream>
 #include <cstdlib>
 #include <utility>
@@ -20,12 +21,12 @@ namespace firewatch {
     
     double FlameSensor::ReadValue() const
     {
-        if (WearDown()) return -999.0; //чтото не так с датчиком
+        if (WearDown())throw SensorFailure{ GetSerial() }; //чтото не так с датчиком
         if (m_intensity > 90)
         {
             std::cout << "[FlameSensor] " << GetSerial() << " ПЕРЕГРУЗКА! Вышел из строя от сильного пламени!\n";
             Break();
-            return -999.0;
+            throw SensorFailure{ GetSerial() };
         }
 
         // Если пламя слабое (< 10 баллов), считаем, что его нет
